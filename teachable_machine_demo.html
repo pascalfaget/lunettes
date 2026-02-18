@@ -1,74 +1,62 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Teachable Machine Webcam Demo</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-layers"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teachable Machine Demo</title>
     <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            height: 100vh;
-            background-color: #f1f1f1;
+        #webcam {
+            display: none;
         }
-        video {
-            width: 640px;
-            height: 480px;
-            border: 2px solid #000;
-        }
-        #result {
-            margin-top: 10px;
-            font-size: 20px;
+        #canvas {
+            border: 1px solid;
         }
     </style>
 </head>
 <body>
-    <h1>Teachable Machine Webcam Demo</h1>
-    <video id="video" autoplay></video>
-    <div id="result"></div>
+    <h1>Teachable Machine Demo</h1>
+    <video id="webcam" autoplay></video>
+    <canvas id="canvas"></canvas>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
     <script>
-        const URL = "https://teachablemachine.withgoogle.com/models/Dtgvd54B5/";
-        let model, webcam, labelContainer, maxPredictions;
+        const video = document.getElementById('webcam');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
 
-        async function init() {
-            const modelURL = URL + "model.json";
-            const metadataURL = URL + "metadata.json";
-
-            model = await tmImage.load(modelURL, metadataURL);
-            maxPredictions = model.getTotalClasses();
-
-            webcam = new tmImage.Webcam(640, 480);
-            await webcam.setup(); // Request access to the webcam
-            await webcam.play();
-            window.requestAnimationFrame(loop);
-
-            document.getElementById("video").srcObject = webcam.canvas.captureStream();
-
-            labelContainer = document.getElementById("result");
-            for (let i = 0; i < maxPredictions; i++) { // Append the labels to the container
-                labelContainer.appendChild(document.createElement("div"));
-            }
+        async function setupWebcam() {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            video.srcObject = stream;
+            return new Promise((resolve) => {
+                video.onloadedmetadata = () => { 
+                    resolve(video);
+                };
+            });
         }
 
-        async function loop() {
-            webcam.update(); // Update the webcam frame
-            await predict();
-            window.requestAnimationFrame(loop);
+        async function loadModel() {
+            const model = await tf.loadGraphModel('model.json');
+            return model;
         }
 
         async function predict() {
-            const prediction = await model.predict(webcam.canvas);
-            for (let i = 0; i < maxPredictions; i++) {
-                const classPrediction = prediction[i].probability.toFixed(2) * 100;
-                labelContainer.children[i].innerHTML = `Class: ${prediction[i].className}, Probability: ${classPrediction}%`;
-            }
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageTensor = tf.browser.fromPixels(canvas);
+            const predictions = await model.predict(imageTensor.expandDims(0)).data();
+            // Handle predictions
+            console.log(predictions);
         }
 
-        init();
+        let model;
+        async function main() {
+            await setupWebcam();
+            model = await loadModel();
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            setInterval(predict, 1000); // Adjust the prediction frequency as needed
+        }
+
+        main();
     </script>
 </body>
 </html>

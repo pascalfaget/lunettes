@@ -1,21 +1,27 @@
-<!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teachable Machine Demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/model/dist/teachablemachine.min.js"></script>
+    <style>
+        video {
+            width: 100%;
+            max-width: 640px;
+            background: #000;
+        }
+    </style>
 </head>
 <body>
-    <h1>Teachable Machine Webcam Demo</h1>
-    <video id="webcam" autoplay playsinline width="640" height="480"></video>
-    <button id="start-button">Start Webcam</button>
+    <h1>Teachable Machine Demo</h1>
+    <video id="webcam" autoplay></video>
+    <button id="startButton">Start Webcam</button>
     <script>
-        const video = document.getElementById('webcam');
-        const startButton = document.getElementById('start-button');
+        const startButton = document.getElementById('startButton');
+        const webcamElement = document.getElementById('webcam');
 
         startButton.addEventListener('click', async () => {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            video.srcObject = stream;
+            webcamElement.srcObject = stream;
+            // Initialize Teachable Machine model here
         });
     </script>
 </body>

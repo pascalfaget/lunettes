@@ -1,36 +1,63 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Teachable Machine Webcam Integration</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teachable Machine Webcam Demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image/dist/teachablemachine-image.min.js"></script>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; flex-direction: column; align-items: center; }
+        video { border: 1px solid black; }
+    </style>
 </head>
 <body>
-    <h1>Teachable Machine Webcam Integration</h1>
-    <video id="webcam" autoplay></video>
-    <h2>Prediction: <span id="result">Loading...</span></h2>
-
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
+    <h1>Teachable Machine Webcam Demo</h1>
+    <video autoplay playsinline width="320" height="240"></video>
+    <p id="result">Loading model and starting webcam...</p>
     <script>
-        const url = "https://teachablemachine.withgoogle.com/models/Dtgvd54B5/";
-        let model, webcam;
+        const video = document.querySelector('video');
+        const resultContainer = document.getElementById('result');
+        const URL = 'https://teachablemachine.withgoogle.com/models/Dtgvd54B5/';
+
+        let model, webcam, labelContainer;
 
         async function init() {
-            model = await tmImage.load(url + "model.json", url + "metadata.json");
-            webcam = new tmImage.Webcam(320, 240, true); 
-            await webcam.setup(); 
+            const modelURL = URL + 'model.json';
+            const metadataURL = URL + 'metadata.json';
+
+            // Load the model
+            model = await tmImage.load(modelURL, metadataURL);
+            labelContainer = document.createElement('div');
+            document.body.appendChild(labelContainer);
+
+            // Initialize the webcam
+            webcam = new tmImage.Webcam(320, 240);
+            await webcam.setup();
             await webcam.play();
-            window.requestAnimationFrame(loop);
+            requestAnimationFrame(loop);
+
+            video.srcObject = webcam.stream;
         }
 
         async function loop() {
-            webcam.update(); 
-            const prediction = await model.predict(webcam.canvas);
-            document.getElementById("result").innerText = prediction[0].className + ": " + prediction[0].probability.toFixed(2);
-            window.requestAnimationFrame(loop);
+            webcam.update();
+            await predict();
+            requestAnimationFrame(loop);
         }
 
-        init();
+        async function predict() {
+            const prediction = await model.predict(webcam.canvas);
+            labelContainer.innerHTML = '';
+            prediction.forEach(pred => {
+                labelContainer.innerHTML += `${pred.class}: ${Math.round(pred.probability * 100)}%<br>`;
+            });
+        }
+
+        // Initialize error handling for webcam
+        init().catch(err => {
+            console.error('Error initializing webcam or model:', err);
+            resultContainer.innerHTML = 'Failed to load webcam or model. Check console for details.';
+        });
     </script>
 </body>
 </html>

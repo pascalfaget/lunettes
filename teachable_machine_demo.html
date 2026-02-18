@@ -1,28 +1,74 @@
+<!DOCTYPE html>
 <html>
 <head>
-    <title>Teachable Machine Demo</title>
-    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/model/dist/teachablemachine.min.js"></script>
+    <title>Teachable Machine Webcam Demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-layers"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image"></script>
     <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #f1f1f1;
+        }
         video {
-            width: 100%;
-            max-width: 640px;
-            background: #000;
+            width: 640px;
+            height: 480px;
+            border: 2px solid #000;
+        }
+        #result {
+            margin-top: 10px;
+            font-size: 20px;
         }
     </style>
 </head>
 <body>
-    <h1>Teachable Machine Demo</h1>
-    <video id="webcam" autoplay></video>
-    <button id="startButton">Start Webcam</button>
+    <h1>Teachable Machine Webcam Demo</h1>
+    <video id="video" autoplay></video>
+    <div id="result"></div>
     <script>
-        const startButton = document.getElementById('startButton');
-        const webcamElement = document.getElementById('webcam');
+        const URL = "https://teachablemachine.withgoogle.com/models/Dtgvd54B5/";
+        let model, webcam, labelContainer, maxPredictions;
 
-        startButton.addEventListener('click', async () => {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            webcamElement.srcObject = stream;
-            // Initialize Teachable Machine model here
-        });
+        async function init() {
+            const modelURL = URL + "model.json";
+            const metadataURL = URL + "metadata.json";
+
+            model = await tmImage.load(modelURL, metadataURL);
+            maxPredictions = model.getTotalClasses();
+
+            webcam = new tmImage.Webcam(640, 480);
+            await webcam.setup(); // Request access to the webcam
+            await webcam.play();
+            window.requestAnimationFrame(loop);
+
+            document.getElementById("video").srcObject = webcam.canvas.captureStream();
+
+            labelContainer = document.getElementById("result");
+            for (let i = 0; i < maxPredictions; i++) { // Append the labels to the container
+                labelContainer.appendChild(document.createElement("div"));
+            }
+        }
+
+        async function loop() {
+            webcam.update(); // Update the webcam frame
+            await predict();
+            window.requestAnimationFrame(loop);
+        }
+
+        async function predict() {
+            const prediction = await model.predict(webcam.canvas);
+            for (let i = 0; i < maxPredictions; i++) {
+                const classPrediction = prediction[i].probability.toFixed(2) * 100;
+                labelContainer.children[i].innerHTML = `Class: ${prediction[i].className}, Probability: ${classPrediction}%`;
+            }
+        }
+
+        init();
     </script>
 </body>
 </html>

@@ -1,63 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teachable Machine Webcam Demo</title>
-    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image/dist/teachablemachine-image.min.js"></script>
-    <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; flex-direction: column; align-items: center; }
-        video { border: 1px solid black; }
-    </style>
+    <title>Teachable Machine Model</title>
 </head>
 <body>
-    <h1>Teachable Machine Webcam Demo</h1>
-    <video autoplay playsinline width="320" height="240"></video>
-    <p id="result">Loading model and starting webcam...</p>
-    <script>
-        const video = document.querySelector('video');
-        const resultContainer = document.getElementById('result');
-        const URL = 'https://teachablemachine.withgoogle.com/models/Dtgvd54B5/';
-
-        let model, webcam, labelContainer;
-
-        async function init() {
-            const modelURL = URL + 'model.json';
-            const metadataURL = URL + 'metadata.json';
-
-            // Load the model
-            model = await tmImage.load(modelURL, metadataURL);
-            labelContainer = document.createElement('div');
-            document.body.appendChild(labelContainer);
-
-            // Initialize the webcam
-            webcam = new tmImage.Webcam(320, 240);
-            await webcam.setup();
-            await webcam.play();
-            requestAnimationFrame(loop);
-
-            video.srcObject = webcam.stream;
-        }
-
-        async function loop() {
-            webcam.update();
-            await predict();
-            requestAnimationFrame(loop);
-        }
-
-        async function predict() {
-            const prediction = await model.predict(webcam.canvas);
-            labelContainer.innerHTML = '';
-            prediction.forEach(pred => {
-                labelContainer.innerHTML += `${pred.class}: ${Math.round(pred.probability * 100)}%<br>`;
-            });
-        }
-
-        // Initialize error handling for webcam
-        init().catch(err => {
-            console.error('Error initializing webcam or model:', err);
-            resultContainer.innerHTML = 'Failed to load webcam or model. Check console for details.';
-        });
-    </script>
+    <h1>Teachable Machine Model</h1>
+    <p>Below is the embedded model:</p>
+    <iframe width="560" height="315" src="https://teachablemachine.withgoogle.com/models/YOUR_MODEL_URL_HERE/embed" frameborder="0" allowfullscreen></iframe>
+    <p>Replace the placeholder in the 'src' attribute with your actual Teachable Machine model URL.</p>
 </body>
 </html>
